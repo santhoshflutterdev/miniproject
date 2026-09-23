@@ -14,7 +14,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Custom CSS -->
+    <!-- Custom Glassmorphism CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
@@ -29,6 +29,7 @@
                 </div>
             </div>
 
+            <!-- Navigation Links -->
             <nav class="nav-menu">
                 <button class="nav-item active" data-tab="tab-overview">
                     <span class="nav-icon">📊</span> Overview
@@ -72,7 +73,6 @@
 
         <!-- Main Content Viewport -->
         <main class="main-content">
-
             <!-- 1. OVERVIEW TAB -->
             <section id="tab-overview" class="tab-pane active">
                 <div class="page-header">
@@ -151,6 +151,17 @@
                     </div>
                 </div>
 
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>⚡ Quick Presets</h3>
+                    </div>
+                    <div class="controls-grid">
+                        <button class="btn btn-secondary" id="btn-preset-ai">🤖 AI Model Fine-Tuning (Heavy GPU)</button>
+                        <button class="btn btn-secondary" id="btn-preset-inference">⚡ Fast Inference API (Low Latency)</button>
+                        <button class="btn btn-secondary" id="btn-preset-batch">📊 Big Data Batch ETL (Green Preferred)</button>
+                    </div>
+                </div>
+
                 <div class="card form-card">
                     <form id="task-submission-form">
                         <div class="form-grid">
@@ -219,7 +230,7 @@
                     </form>
                 </div>
 
-                <!-- Result Card -->
+                <!-- Result Placement Card -->
                 <div id="submit-result-card" class="card result-card hidden">
                     <div class="card-header">
                         <h3>📍 Placement Scheduling Decision</h3>
@@ -238,7 +249,7 @@
                 </div>
 
                 <div class="gpu-cluster-grid" id="gpu-nodes-container">
-                    <!-- Dynamic GPU cards -->
+                    <!-- Dynamic GPU cards populated via app.js -->
                 </div>
             </section>
 
@@ -252,6 +263,17 @@
                 </div>
 
                 <div class="card">
+                    <div class="card-header">
+                        <div class="controls-grid" style="width: 100%; justify-content: space-between;">
+                            <input type="text" id="input-queue-search" placeholder="🔍 Search Task ID / User ID..." style="width: 250px;">
+                            <div class="controls-grid">
+                                <button class="btn btn-secondary btn-sm filter-task-btn active" data-filter="all">All</button>
+                                <button class="btn btn-secondary btn-sm filter-task-btn" data-filter="queued">Queued</button>
+                                <button class="btn btn-secondary btn-sm filter-task-btn" data-filter="running">Running</button>
+                                <button class="btn btn-secondary btn-sm filter-task-btn" data-filter="completed">Completed</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="custom-table" id="tasks-data-table">
                             <thead>
@@ -284,29 +306,27 @@
                     </div>
                 </div>
 
-                <div class="dashboard-grid-2">
+                <div class="dashboard-grid-2 mb-4">
                     <div class="card">
                         <div class="card-header">
                             <h3>🧠 Model Training Controls</h3>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="input-epochs">Training Epochs</label>
                             <input type="number" id="input-epochs" value="30" min="5" max="100">
                         </div>
                         <button class="btn btn-primary" id="btn-train-model">🧠 Train PyTorch LSTM Model</button>
 
-                        <hr class="divider">
-
-                        <div class="metrics-column">
-                            <div class="metric-row">
+                        <div class="metrics-column mt-4" style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+                            <div class="metric-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Model Status:</span>
                                 <strong id="pred-model-status">Trained 🟢</strong>
                             </div>
-                            <div class="metric-row">
+                            <div class="metric-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span>Mean Absolute Error (MAE):</span>
                                 <strong id="pred-mae">0.0000</strong>
                             </div>
-                            <div class="metric-row">
+                            <div class="metric-row" style="display: flex; justify-content: space-between;">
                                 <span>Root Mean Sq Error (RMSE):</span>
                                 <strong id="pred-rmse">0.0000</strong>
                             </div>
@@ -320,6 +340,25 @@
                         <div class="chart-wrapper">
                             <canvas id="chart-predictive-workload"></canvas>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Inference Tester -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🔮 Real-Time Inference Test Simulator</h3>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="slider-hist-load">Simulated Recent Load Sequence (Avg %): <span id="lbl-hist-load">55</span>%</label>
+                            <input type="range" id="slider-hist-load" min="10" max="95" value="55" step="5">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end;">
+                            <button class="btn btn-success" id="btn-run-inference-test">🔮 Run PyTorch LSTM Inference</button>
+                        </div>
+                    </div>
+                    <div id="inference-test-result" class="mt-3 p-3 hidden" style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: var(--radius-sm);">
+                        <!-- Result injected by app.js -->
                     </div>
                 </div>
             </section>
@@ -348,12 +387,22 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>🌱 Carbon Emissions per Assigned GPU Node</h3>
+                <div class="dashboard-grid-2 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🌱 Carbon Emissions per Assigned GPU Node</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-carbon-per-gpu"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-carbon-per-gpu"></canvas>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🌍 Green Grid Optimization Action</h3>
+                        </div>
+                        <p class="kpi-subtext mb-3">Simulate dynamic clean energy surge (solar/wind peak) across regional data centers to shift GPU tasks to lower-carbon regions.</p>
+                        <button class="btn btn-success btn-lg" id="btn-green-grid-shift">🌱 Trigger Green Energy Grid Shift</button>
                     </div>
                 </div>
             </section>
@@ -367,10 +416,35 @@
                     </div>
                 </div>
 
-                <div class="card mb-4">
-                    <div class="kpi-header">
-                        <span class="kpi-title">Total Recorded Isolation Violations</span>
-                        <span class="badge badge-warning" id="badge-isolation-count">0 Events</span>
+                <div class="dashboard-grid-2 mb-4">
+                    <div class="card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Total Recorded Isolation Violations</span>
+                            <span class="badge badge-warning" id="badge-isolation-count">0 Events</span>
+                        </div>
+                        <p class="kpi-subtext mt-2">Enforces strict cgroup ceilings to eliminate noisy-neighbor interference on multi-tenant GPUs.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>💥 Simulate Noisy-Neighbor Spike</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="select-trigger-gpu">Target GPU Node</label>
+                                <select id="select-trigger-gpu">
+                                    <option value="GPU1">GPU1 (US-East)</option>
+                                    <option value="GPU2">GPU2 (US-West)</option>
+                                    <option value="GPU3">GPU3 (EU-Nordic)</option>
+                                    <option value="GPU4">GPU4 (Asia-East)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="slider-spike-factor">Spike Multiplier: <span id="lbl-spike-factor">1.40</span>x</label>
+                                <input type="range" id="slider-spike-factor" min="1.1" max="2.0" step="0.1" value="1.40">
+                            </div>
+                        </div>
+                        <button class="btn btn-danger mt-3" id="btn-trigger-violation">💥 Trigger Quota Breach Event</button>
                     </div>
                 </div>
 
@@ -408,7 +482,7 @@
                     </div>
                 </div>
 
-                <div class="action-banner mb-4">
+                <div class="action-banner mb-4" style="display: flex; gap: 14px;">
                     <button class="btn btn-primary btn-lg" id="btn-run-benchmark">⚡ Run Comparative Experiment Benchmark</button>
                     <button class="btn btn-secondary btn-lg" id="btn-export-csv" disabled>📥 Export Benchmark CSV</button>
                 </div>

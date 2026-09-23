@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { min: 0, max: 100, grid: { color: "#263046" } } },
+                scales: { y: { min: 0, max: 100, grid: { color: "rgba(255,255,255,0.08)" } } },
                 plugins: { legend: { display: false } }
             }
         });
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { grid: { color: "#263046" } } },
+                scales: { y: { grid: { color: "rgba(255,255,255,0.08)" } } },
                 plugins: { legend: { display: false } }
             }
         });
@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         label: "Actual GPU Demand (%)",
                         data: [30, 35, 42, 50, 48, 55, null],
                         borderColor: "#00E5FF",
-                        backgroundColor: "rgba(0, 229, 255, 0.1)",
+                        backgroundColor: "rgba(0, 229, 255, 0.15)",
                         fill: true,
                         tension: 0.3
                     },
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { min: 0, max: 100, grid: { color: "#263046" } } }
+                scales: { y: { min: 0, max: 100, grid: { color: "rgba(255,255,255,0.08)" } } }
             }
         });
 
@@ -146,7 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { grid: { color: "#263046" } } }
+                scales: { y: { grid: { color: "rgba(255,255,255,0.08)" } } },
+                plugins: { legend: { display: false } }
             }
         });
 
@@ -166,7 +167,8 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { grid: { color: "#263046" } } }
+                scales: { y: { grid: { color: "rgba(255,255,255,0.08)" } } },
+                plugins: { legend: { display: false } }
             }
         });
 
@@ -186,10 +188,15 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { grid: { color: "#263046" } } }
+                scales: { y: { grid: { color: "rgba(255,255,255,0.08)" } } },
+                plugins: { legend: { display: false } }
             }
         });
     }
+
+    // Cache store for tasks to support live search & status filtering
+    let allTasksCache = [];
+    let activeTaskFilter = "all";
 
     // Refresh Dashboard Data from FastAPI Backend
     async function refreshDashboardData() {
@@ -234,12 +241,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 charts.carbonIntensity.data.datasets[0].data = gpus.map(g => g.carbon_intensity);
                 charts.carbonIntensity.update();
             }
+            if (charts.carbonGpu) {
+                charts.carbonGpu.data.labels = gpus.map(g => `${g.gpu_id} (${g.location})`);
+                charts.carbonGpu.data.datasets[0].data = gpus.map(g => (g.power_watts * 0.15 * (g.carbon_intensity / 1000.0)).toFixed(2));
+                charts.carbonGpu.update();
+            }
         }
 
         // 3. Fetch Tasks Queue
         const tasks = await apiFetch("/tasks");
         if (tasks && Array.isArray(tasks)) {
-            renderTasksTable(tasks);
+            allTasksCache = tasks;
+            applyTaskFilters();
         }
 
         // 4. Fetch Predictions
@@ -273,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Render GPU Cards Component
+    // Render GPU Cards Component with Interactive Action Buttons
     function renderGpuCards(gpus) {
         const container = document.getElementById("gpu-nodes-container");
         container.innerHTML = gpus.map(gpu => `
@@ -287,21 +300,79 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" style="width: ${Math.min(100, gpu.current_utilization)}%"></div>
                 </div>
-                <div class="kpi-subtext mt-2">
+                <div class="kpi-subtext mt-2 mb-3">
                     📍 Location: <strong>${gpu.location}</strong><br>
                     ⚡ Power Draw: <strong>${gpu.power_watts} W</strong> | Carbon: <strong>${gpu.carbon_intensity} gCO₂/kWh</strong><br>
                     💾 Memory: <strong>${gpu.available_memory.toFixed(0)} / ${gpu.total_memory.toFixed(0)} MB</strong><br>
                     📋 Active Tasks: <strong>${gpu.running_tasks ? gpu.running_tasks.length : 0}</strong>
                 </div>
+                <div class="controls-grid" style="gap: 8px;">
+                    <button class="btn btn-secondary btn-sm gpu-spike-btn" data-gpu="${gpu.gpu_id}">⚡ Spike +25%</button>
+                    <button class="btn btn-secondary btn-sm gpu-maint-btn" data-gpu="${gpu.gpu_id}">🛠️ Maintenance</button>
+                </div>
             </div>
         `).join("");
+
+        // Attach GPU Action Event Handlers
+        document.querySelectorAll(".gpu-spike-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const gpuId = btn.getAttribute("data-gpu");
+                const res = await apiFetch(`/gpus/${gpuId}/spike?spike_amount=25.0`, "POST");
+                if (res) {
+                    showToast(`Simulated +25% load spike on ${gpuId}!`, "warning");
+                    refreshDashboardData();
+                }
+            });
+        });
+
+        document.querySelectorAll(".gpu-maint-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const gpuId = btn.getAttribute("data-gpu");
+                const res = await apiFetch(`/gpus/${gpuId}/toggle-maintenance`, "POST");
+                if (res) {
+                    showToast(`Toggled ${gpuId} status to ${res.status}!`, "info");
+                    refreshDashboardData();
+                }
+            });
+        });
     }
+
+    // Filter Tasks in Queue Table
+    function applyTaskFilters() {
+        const searchInput = document.getElementById("input-queue-search");
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+        let filtered = allTasksCache;
+        if (activeTaskFilter !== "all") {
+            filtered = filtered.filter(t => t.status === activeTaskFilter);
+        }
+        if (query) {
+            filtered = filtered.filter(t => t.task_id.toLowerCase().includes(query) || t.user_id.toLowerCase().includes(query));
+        }
+        renderTasksTable(filtered);
+    }
+
+    // Task Queue Search Input Listener
+    const searchInput = document.getElementById("input-queue-search");
+    if (searchInput) {
+        searchInput.addEventListener("input", applyTaskFilters);
+    }
+
+    // Task Queue Status Filter Buttons
+    document.querySelectorAll(".filter-task-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".filter-task-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeTaskFilter = btn.getAttribute("data-filter");
+            applyTaskFilters();
+        });
+    });
 
     // Render Tasks Table Component
     function renderTasksTable(tasks) {
         const tbody = document.getElementById("tasks-table-body");
         if (tasks.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" class="text-center">No tasks currently loaded in queue</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center">No matching tasks found</td></tr>`;
             return;
         }
 
@@ -356,6 +427,46 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Submit Task Presets Handlers
+    document.getElementById("btn-preset-ai")?.addEventListener("click", () => {
+        document.getElementById("form-user-id").value = "U_LLM_TRAIN";
+        document.getElementById("form-gpu-demand").value = 90;
+        document.getElementById("val-gpu-demand").textContent = "90";
+        document.getElementById("form-memory-demand").value = "24576";
+        document.getElementById("form-duration").value = 60;
+        document.getElementById("form-priority").value = "high";
+        document.getElementById("form-deadline").value = 120;
+        document.getElementById("form-isolation").value = "strong";
+        document.getElementById("form-carbon-pref").value = "low";
+        showToast("Loaded AI Model Fine-Tuning Preset", "info");
+    });
+
+    document.getElementById("btn-preset-inference")?.addEventListener("click", () => {
+        document.getElementById("form-user-id").value = "U_INFERENCE_API";
+        document.getElementById("form-gpu-demand").value = 25;
+        document.getElementById("val-gpu-demand").textContent = "25";
+        document.getElementById("form-memory-demand").value = "4096";
+        document.getElementById("form-duration").value = 10;
+        document.getElementById("form-priority").value = "high";
+        document.getElementById("form-deadline").value = 15;
+        document.getElementById("form-isolation").value = "strong";
+        document.getElementById("form-carbon-pref").value = "standard";
+        showToast("Loaded Fast Inference API Preset", "info");
+    });
+
+    document.getElementById("btn-preset-batch")?.addEventListener("click", () => {
+        document.getElementById("form-user-id").value = "U_BATCH_ETL";
+        document.getElementById("form-gpu-demand").value = 60;
+        document.getElementById("val-gpu-demand").textContent = "60";
+        document.getElementById("form-memory-demand").value = "16384";
+        document.getElementById("form-duration").value = 120;
+        document.getElementById("form-priority").value = "low";
+        document.getElementById("form-deadline").value = 300;
+        document.getElementById("form-isolation").value = "soft";
+        document.getElementById("form-carbon-pref").value = "low";
+        showToast("Loaded Big Data Batch ETL Preset", "info");
+    });
+
     // Submit Task Form Handler
     const taskForm = document.getElementById("task-submission-form");
     if (taskForm) {
@@ -376,7 +487,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (createdTask) {
                 showToast(`Task ${createdTask.task_id} submitted successfully!`, "success");
                 
-                // Show result placement card
                 const resCard = document.getElementById("submit-result-card");
                 const resDetails = document.getElementById("submit-result-details");
                 resCard.classList.remove("hidden");
@@ -404,6 +514,78 @@ document.addEventListener("DOMContentLoaded", () => {
             btnTrain.disabled = false;
             if (res) {
                 showToast(`Model trained! MAE: ${res.metrics.mae.toFixed(4)}, RMSE: ${res.metrics.rmse.toFixed(4)}`, "success");
+                refreshDashboardData();
+            }
+        });
+    }
+
+    // Interactive Inference Test Simulator
+    const sliderHistLoad = document.getElementById("slider-hist-load");
+    const lblHistLoad = document.getElementById("lbl-hist-load");
+    if (sliderHistLoad && lblHistLoad) {
+        sliderHistLoad.addEventListener("input", (e) => {
+            lblHistLoad.textContent = e.target.value;
+        });
+    }
+
+    const btnRunInference = document.getElementById("btn-run-inference-test");
+    if (btnRunInference) {
+        btnRunInference.addEventListener("click", async () => {
+            const baseVal = parseFloat(sliderHistLoad.value);
+            const history = [
+                Math.max(5, baseVal - 15),
+                Math.max(5, baseVal - 10),
+                Math.max(5, baseVal - 5),
+                baseVal
+            ];
+
+            const res = await apiFetch("/predict/inference-test", "POST", { history });
+            const resultBox = document.getElementById("inference-test-result");
+            if (res && resultBox) {
+                resultBox.classList.remove("hidden");
+                resultBox.innerHTML = `
+                    <p>🔮 <strong>Input Historical Demand Sequence</strong>: <code>[${history.join("%, ")}%]</code></p>
+                    <p>📊 <strong>PyTorch LSTM Next-Step Forecast</strong>: <strong style="color: var(--accent-cyan); font-size: 1.1rem;">${res.predicted_utilization}%</strong> (Confidence Delta: ±${res.confidence_delta}%)</p>
+                `;
+                showToast(`Forecast complete: ${res.predicted_utilization}% GPU demand predicted`, "success");
+            }
+        });
+    }
+
+    // Green Energy Grid Shift Handler
+    const btnGreenGrid = document.getElementById("btn-green-grid-shift");
+    if (btnGreenGrid) {
+        btnGreenGrid.addEventListener("click", async () => {
+            const res = await apiFetch("/carbon/grid-shift", "POST");
+            if (res) {
+                showToast(res.message, "success");
+                refreshDashboardData();
+            }
+        });
+    }
+
+    // Noisy-Neighbor Violation Trigger Handler
+    const sliderSpikeFactor = document.getElementById("slider-spike-factor");
+    const lblSpikeFactor = document.getElementById("lbl-spike-factor");
+    if (sliderSpikeFactor && lblSpikeFactor) {
+        sliderSpikeFactor.addEventListener("input", (e) => {
+            lblSpikeFactor.textContent = parseFloat(e.target.value).toFixed(2);
+        });
+    }
+
+    const btnTriggerViolation = document.getElementById("btn-trigger-violation");
+    if (btnTriggerViolation) {
+        btnTriggerViolation.addEventListener("click", async () => {
+            const gpuId = document.getElementById("select-trigger-gpu").value;
+            const spikeFactor = parseFloat(sliderSpikeFactor.value);
+
+            const res = await apiFetch("/isolation/trigger-violation", "POST", { gpu_id: gpuId, spike_factor: spikeFactor });
+            if (res) {
+                if (res.status === "violation_detected") {
+                    showToast(`Software isolation quota breach detected on ${gpuId}! Cgroup ceiling enforced.`, "danger");
+                } else {
+                    showToast(`Workload spike within quota limits on ${gpuId}.`, "info");
+                }
                 refreshDashboardData();
             }
         });
@@ -500,10 +682,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const scheduler = selectScheduler.value;
             const res = await apiFetch("/simulate", "POST", { action: "step", scheduler_type: scheduler });
             if (res && res.state) {
-                document.getElementById("sim-clock-val").textContent = res.state.current_time;
-                document.getElementById("sim-queued-val").textContent = res.state.queued_count;
-                document.getElementById("sim-running-val").textContent = res.state.running_count;
-                document.getElementById("sim-completed-val").textContent = res.state.completed_count;
                 showToast(`Executed step to minute ${res.state.current_time}`, "info");
                 refreshDashboardData();
             }
@@ -526,17 +704,13 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSimReset.addEventListener("click", async () => {
             const res = await apiFetch("/simulate", "POST", { action: "reset" });
             if (res) {
-                document.getElementById("sim-clock-val").textContent = "0";
-                document.getElementById("sim-queued-val").textContent = "0";
-                document.getElementById("sim-running-val").textContent = "0";
-                document.getElementById("sim-completed-val").textContent = "0";
                 showToast("Simulation engine reset!", "info");
                 refreshDashboardData();
             }
         });
     }
 
-    // Sliders Label Synchronizer
+    // Sliders Label Synchronizer for Multi-Objective Weights
     ["res", "pred", "carb", "dead", "iso"].forEach(key => {
         const slider = document.getElementById(`slider-w-${key}`);
         const label = document.getElementById(`lbl-w-${key}`);
@@ -550,8 +724,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save Weights Handler
     const btnSaveWeights = document.getElementById("btn-save-weights");
     if (btnSaveWeights) {
-        btnSaveWeights.addEventListener("click", () => {
-            showToast("Algorithm multi-objective weights saved!", "success");
+        btnSaveWeights.addEventListener("click", async () => {
+            const weights = {
+                resource: parseFloat(document.getElementById("slider-w-res").value),
+                prediction: parseFloat(document.getElementById("slider-w-pred").value),
+                carbon: parseFloat(document.getElementById("slider-w-carb").value),
+                deadline: parseFloat(document.getElementById("slider-w-dead").value),
+                isolation: parseFloat(document.getElementById("slider-w-iso").value)
+            };
+
+            const res = await apiFetch("/settings/weights", "POST", weights);
+            if (res) {
+                showToast("Algorithm multi-objective weights saved and applied!", "success");
+            }
         });
     }
 

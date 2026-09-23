@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import logging
 from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
@@ -169,6 +170,84 @@ def reset_simulation():
         df = pd.read_csv("data/sample_tasks.csv")
         simulator.load_tasks_from_dataframe(df)
     return {"status": "reset_complete"}
+
+# Interactive Tab Action Endpoints
+class WeightSettings(BaseModel):
+    resource: float = 0.30
+    prediction: float = 0.25
+    carbon: float = 0.25
+    deadline: float = 0.10
+    isolation: float = 0.10
+
+class ViolationTrigger(BaseModel):
+    gpu_id: str = "GPU1"
+    spike_factor: float = 1.4
+
+class InferenceTest(BaseModel):
+    history: List[float] = [35.0, 42.0, 48.0, 55.0]
+
+@app.post("/gpus/{gpu_id}/spike")
+def spike_gpu_load(gpu_id: str, spike_amount: float = 25.0):
+    for g in simulator.gpus:
+        if g.gpu_id == gpu_id:
+            g.current_utilization = min(100.0, g.current_utilization + spike_amount)
+            return {"status": "spiked", "gpu_id": gpu_id, "new_utilization": g.current_utilization}
+    raise HTTPException(status_code=404, detail=f"GPU {gpu_id} not found")
+
+@app.post("/gpus/{gpu_id}/toggle-maintenance")
+def toggle_gpu_maintenance(gpu_id: str):
+    for g in simulator.gpus:
+        if g.gpu_id == gpu_id:
+            if g.available_gpu_capacity > 0:
+                g.available_gpu_capacity = 0.0
+                g.current_utilization = 100.0
+                status = "maintenance_mode"
+            else:
+                g.available_gpu_capacity = 100.0
+                g.current_utilization = 0.0
+                status = "online_mode"
+            return {"status": status, "gpu_id": gpu_id}
+    raise HTTPException(status_code=404, detail=f"GPU {gpu_id} not found")
+
+@app.post("/predict/inference-test")
+def run_inference_test(data: InferenceTest):
+    pred = simulator.predictor.predict(data.history)
+    return {
+        "input_history": data.history,
+        "predicted_utilization": round(pred, 2),
+        "confidence_delta": round(abs(pred - data.history[-1]), 2) if data.history else 0.0
+    }
+
+@app.post("/carbon/grid-shift")
+def simulate_green_grid_shift():
+    shifts = {"GPU1": 250.0, "GPU2": 150.0, "GPU3": 50.0, "GPU4": 180.0}
+    for g in simulator.gpus:
+        if g.gpu_id in shifts:
+            g.carbon_intensity = shifts[g.gpu_id]
+            g.renewable_ratio = min(0.95, g.renewable_ratio + 0.3)
+    return {"status": "grid_shifted", "message": "Green energy surge applied to regional data centers"}
+
+@app.post("/isolation/trigger-violation")
+def trigger_test_violation(data: ViolationTrigger):
+    gpu = next((g for g in simulator.gpus if g.gpu_id == data.gpu_id), simulator.gpus[0])
+    task = simulator.running_tasks[0] if simulator.running_tasks else (simulator.completed_tasks[0] if simulator.completed_tasks else None)
+    if not task:
+        task = Task(task_id="TEST_TASK", user_id="U999", gpu_demand=40.0, memory_demand=4096.0, duration=10.0, isolation_level="strong")
+        task.allocated_gpu = 40.0
+        task.assigned_gpu = gpu.gpu_id
+    
+    simulated_usage = task.allocated_gpu * data.spike_factor
+    v = simulator.isolation_manager.detect_violation(task, simulated_usage, simulator.current_time)
+    if v:
+        simulator.isolation_manager.enforce_quota(task)
+        return {"status": "violation_detected", "violation": v.dict()}
+    return {"status": "quota_within_bounds", "requested": simulated_usage, "limit": task.allocated_gpu}
+
+@app.post("/settings/weights")
+def update_algorithm_weights(w: WeightSettings):
+    if hasattr(simulator.proposed_scheduler, "set_weights"):
+        simulator.proposed_scheduler.set_weights(w.dict())
+    return {"status": "weights_updated", "normalized_weights": simulator.proposed_scheduler.weights if hasattr(simulator.proposed_scheduler, "weights") else w.dict()}
 
 # Mount HTML5/CSS3/JavaScript SPA frontend
 from fastapi.staticfiles import StaticFiles

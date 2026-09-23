@@ -702,10 +702,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnSimReset) {
         btnSimReset.addEventListener("click", async () => {
+            if (autoStepTimer) {
+                clearInterval(autoStepTimer);
+                autoStepTimer = null;
+                if (btnSimAutoStep) {
+                    btnSimAutoStep.textContent = "⏯️ Auto-Play Continuous";
+                    btnSimAutoStep.classList.remove("btn-warning");
+                    btnSimAutoStep.classList.add("btn-secondary");
+                }
+            }
             const res = await apiFetch("/simulate", "POST", { action: "reset" });
             if (res) {
                 showToast("Simulation engine reset!", "info");
                 refreshDashboardData();
+            }
+        });
+    }
+
+    // Auto-Play Continuous Step Handler
+    let autoStepTimer = null;
+    const btnSimAutoStep = document.getElementById("sim-btn-autostep");
+    if (btnSimAutoStep) {
+        btnSimAutoStep.addEventListener("click", () => {
+            if (autoStepTimer) {
+                clearInterval(autoStepTimer);
+                autoStepTimer = null;
+                btnSimAutoStep.textContent = "⏯️ Auto-Play Continuous";
+                btnSimAutoStep.classList.remove("btn-warning");
+                btnSimAutoStep.classList.add("btn-secondary");
+                showToast("Auto-Play simulation paused.", "info");
+            } else {
+                btnSimAutoStep.textContent = "⏸️ Pause Auto-Play";
+                btnSimAutoStep.classList.remove("btn-secondary");
+                btnSimAutoStep.classList.add("btn-warning");
+                showToast("Auto-Play active! Stepping simulation continuously...", "success");
+
+                autoStepTimer = setInterval(async () => {
+                    const scheduler = selectScheduler.value;
+                    const res = await apiFetch("/simulate", "POST", { action: "step", scheduler_type: scheduler });
+                    if (res && res.state) {
+                        refreshDashboardData();
+                        if (res.state.queued_count === 0 && res.state.running_count === 0) {
+                            clearInterval(autoStepTimer);
+                            autoStepTimer = null;
+                            btnSimAutoStep.textContent = "⏯️ Auto-Play Continuous";
+                            btnSimAutoStep.classList.remove("btn-warning");
+                            btnSimAutoStep.classList.add("btn-secondary");
+                            showToast("All 100 simulation tasks completed!", "success");
+                        }
+                    }
+                }, 800);
             }
         });
     }

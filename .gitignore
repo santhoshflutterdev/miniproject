@@ -19,6 +19,7 @@ models/*.pt
 .DS_Store
 .vscode/
 .idea/
+scratch/
 
 # Environment secrets
 .env

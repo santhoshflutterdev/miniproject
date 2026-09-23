@@ -182,6 +182,29 @@ def save_prediction(prediction_data: Dict[str, Any]) -> str:
     local_db.set_document("predictions", doc_id, prediction_data)
     return doc_id
 
+def save_metrics(metrics_data: Dict[str, Any]) -> str:
+    client = init_firebase()
+    doc_id = str(metrics_data.get("scheduler_type", "latest"))
+    if client:
+        try:
+            client.collection("metrics").document(doc_id).set(metrics_data)
+        except Exception as e:
+            logger.warning(f"Firestore error saving metrics: {e}. Disabling Firebase.")
+            disable_firebase()
+    local_db.set_document("metrics", doc_id, metrics_data)
+    return doc_id
+
+def get_metrics() -> List[Dict[str, Any]]:
+    client = init_firebase()
+    if client:
+        try:
+            docs = client.collection("metrics").stream()
+            return [doc.to_dict() for doc in docs]
+        except Exception as e:
+            logger.warning(f"Firestore error getting metrics: {e}. Disabling Firebase.")
+            disable_firebase()
+    return local_db.get_all_documents("metrics")
+
 def save_violation(violation_data: Dict[str, Any]) -> str:
     client = init_firebase()
     v_id = violation_data.get("violation_id", "V000")

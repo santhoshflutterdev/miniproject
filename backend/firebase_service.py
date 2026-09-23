@@ -18,6 +18,11 @@ def init_firebase():
     if _firebase_initialized:
         return _db_client
 
+    # Force local mode if SIMULATION_MODE is active or DISABLE_FIREBASE env is set
+    if os.environ.get("DISABLE_FIREBASE", "0") == "1":
+        _firebase_disabled = True
+        return None
+
     key_path = getattr(settings, "SERVICE_ACCOUNT_KEY_PATH", "serviceAccountKey.json")
     
     try:
@@ -28,14 +33,19 @@ def init_firebase():
             if os.path.exists(key_path):
                 with open(key_path, "r") as f:
                     content = f.read()
-                    if "your-firebase-project-id" in content or "YOUR_PRIVATE_KEY" in content:
-                        logger.info("Placeholder serviceAccountKey.json detected. Using Local Database.")
+                    if "your-firebase-project-id" in content or "YOUR_PRIVATE_KEY" in content or "DUMMY" in content or "gpu-scheduler-bbb53" in content:
+                        logger.info("Unverified or dummy serviceAccountKey.json detected. Instant fallback to Local Database.")
                         _firebase_disabled = True
                         return None
                 
-                cred = credentials.Certificate(key_path)
-                firebase_admin.initialize_app(cred)
-                logger.info(f"Firebase Admin SDK initialized using {key_path}")
+                try:
+                    cred = credentials.Certificate(key_path)
+                    firebase_admin.initialize_app(cred)
+                    logger.info(f"Firebase Admin SDK initialized using {key_path}")
+                except Exception as app_err:
+                    logger.warning(f"Firebase app init failed: {app_err}. Using Local DB.")
+                    _firebase_disabled = True
+                    return None
             elif settings.FIREBASE_PROJECT_ID and settings.FIREBASE_PRIVATE_KEY and "your-firebase-project-id" not in settings.FIREBASE_PROJECT_ID:
                 private_key = settings.FIREBASE_PRIVATE_KEY.replace('\\n', '\n')
                 cred_dict = {
@@ -48,18 +58,24 @@ def init_firebase():
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
                 }
-                cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
-                logger.info("Firebase Admin SDK initialized using environment variables")
+                try:
+                    cred = credentials.Certificate(cred_dict)
+                    firebase_admin.initialize_app(cred)
+                    logger.info("Firebase Admin SDK initialized using environment variables")
+                except Exception as app_err:
+                    logger.warning(f"Firebase app init failed: {app_err}. Using Local DB.")
+                    _firebase_disabled = True
+                    return None
             else:
                 logger.info("No valid Firebase credentials found. Using Local Database.")
                 _firebase_disabled = True
                 return None
 
         client = firestore.client()
-        # Test connection to verify JWT validity
+        # Test connection with short timeout to verify JWT validity
         try:
-            client.collection("health_check").limit(1).get()
+            # Simple query to verify authentication
+            client.collection("health_check").limit(1).get(timeout=2.0)
             _db_client = client
             _firebase_initialized = True
             return _db_client

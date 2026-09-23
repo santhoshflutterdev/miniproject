@@ -87,6 +87,9 @@ class MetricsSummary(BaseModel):
     scheduler_type: str
     total_tasks: int
     completed_tasks: int
+    queued_tasks: int = 0
+    running_tasks: int = 0
+    clock_time: float = 0.0
     avg_gpu_utilization: float
     avg_waiting_time: float
     avg_turnaround_time: float

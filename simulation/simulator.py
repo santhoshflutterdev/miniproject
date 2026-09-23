@@ -220,11 +220,16 @@ class GPUSimulator:
         self.is_running = False
 
     def get_summary_metrics(self):
+        total_tasks_count = len(self.queued_tasks) + len(self.running_tasks) + len(self.completed_tasks)
         return self.metrics_engine.compute_summary(
             scheduler_type=self.scheduler_type,
             completed_tasks=self.completed_tasks,
             gpus=self.gpus,
             violations=self.isolation_manager.violations,
             prediction_mae=self.predictor.last_mae,
-            prediction_rmse=self.predictor.last_rmse
+            prediction_rmse=self.predictor.last_rmse,
+            total_tasks=total_tasks_count,
+            queued_tasks=len(self.queued_tasks),
+            running_tasks=len(self.running_tasks),
+            clock_time=self.current_time
         )

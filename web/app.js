@@ -197,6 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const metrics = await apiFetch("/metrics");
         if (metrics) {
             document.getElementById("kpi-completed-tasks").textContent = `${metrics.completed_tasks} / ${metrics.total_tasks}`;
+            const queuedEl = document.getElementById("kpi-queued-count");
+            if (queuedEl) queuedEl.textContent = metrics.queued_tasks;
+
             document.getElementById("kpi-avg-util").textContent = `${metrics.avg_gpu_utilization}%`;
             document.getElementById("kpi-total-carbon").innerHTML = `${metrics.total_carbon_gco2} <span class="unit">gCO₂</span>`;
             document.getElementById("kpi-total-energy").textContent = metrics.total_energy_kwh;
@@ -205,6 +208,16 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("carbon-energy-val").textContent = `${metrics.total_energy_kwh} kWh`;
             document.getElementById("carbon-total-val").textContent = `${metrics.total_carbon_gco2} gCO₂`;
             document.getElementById("carbon-avg-val").textContent = `${metrics.avg_carbon_per_task} gCO₂`;
+
+            // Sync Simulation Controls UI
+            const clockValEl = document.getElementById("sim-clock-val");
+            if (clockValEl) clockValEl.textContent = metrics.clock_time || 0;
+            const simQueuedEl = document.getElementById("sim-queued-val");
+            if (simQueuedEl) simQueuedEl.textContent = metrics.queued_tasks;
+            const simRunningEl = document.getElementById("sim-running-val");
+            if (simRunningEl) simRunningEl.textContent = metrics.running_tasks;
+            const simCompletedEl = document.getElementById("sim-completed-val");
+            if (simCompletedEl) simCompletedEl.textContent = metrics.completed_tasks;
         }
 
         // 2. Fetch GPU Nodes Telemetry

@@ -34,29 +34,17 @@ class MetricsEngine:
         gpus: List[GPU],
         violations: List[IsolationViolation],
         prediction_mae: Optional[float] = None,
-        prediction_rmse: Optional[float] = None
+        prediction_rmse: Optional[float] = None,
+        total_tasks: Optional[int] = None,
+        queued_tasks: int = 0,
+        running_tasks: int = 0,
+        clock_time: float = 0.0
     ) -> MetricsSummary:
         """
         Generates a summary of all metrics for a simulation run.
         """
-        total_count = len(completed_tasks)
-        if total_count == 0:
-            return MetricsSummary(
-                scheduler_type=scheduler_type,
-                total_tasks=0,
-                completed_tasks=0,
-                avg_gpu_utilization=0.0,
-                avg_waiting_time=0.0,
-                avg_turnaround_time=0.0,
-                total_energy_kwh=0.0,
-                total_carbon_gco2=0.0,
-                avg_carbon_per_task=0.0,
-                deadline_violations=0,
-                isolation_violations=0,
-                jains_fairness_index=1.0,
-                prediction_mae=prediction_mae,
-                prediction_rmse=prediction_rmse
-            )
+        completed_count = len(completed_tasks)
+        total_count = total_tasks if total_tasks is not None else completed_count
 
         waiting_times = [t.waiting_time for t in completed_tasks]
         turnaround_times = [t.turnaround_time for t in completed_tasks]
@@ -73,7 +61,7 @@ class MetricsEngine:
         avg_turnaround = float(np.mean(turnaround_times)) if turnaround_times else 0.0
         total_energy = float(np.sum(energy_consumptions)) if energy_consumptions else 0.0
         total_carbon = float(np.sum(carbon_emissions)) if carbon_emissions else 0.0
-        avg_carbon = total_carbon / total_count if total_count > 0 else 0.0
+        avg_carbon = total_carbon / completed_count if completed_count > 0 else 0.0
 
         # Jain's fairness index across user allocated resources
         user_allocations: Dict[str, float] = {}
@@ -84,7 +72,10 @@ class MetricsEngine:
         summary = MetricsSummary(
             scheduler_type=scheduler_type,
             total_tasks=total_count,
-            completed_tasks=total_count,
+            completed_tasks=completed_count,
+            queued_tasks=queued_tasks,
+            running_tasks=running_tasks,
+            clock_time=clock_time,
             avg_gpu_utilization=round(avg_gpu_util, 2),
             avg_waiting_time=round(avg_wait, 2),
             avg_turnaround_time=round(avg_turnaround, 2),

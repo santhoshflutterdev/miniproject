@@ -245,9 +245,8 @@ def trigger_test_violation(data: ViolationTrigger):
 
 @app.post("/settings/weights")
 def update_algorithm_weights(w: WeightSettings):
-    if hasattr(simulator.proposed_scheduler, "set_weights"):
-        simulator.proposed_scheduler.set_weights(w.dict())
-    return {"status": "weights_updated", "normalized_weights": simulator.proposed_scheduler.weights if hasattr(simulator.proposed_scheduler, "weights") else w.dict()}
+    simulator.set_custom_weights(w.dict())
+    return {"status": "weights_updated", "weights": w.dict()}
 
 # Mount HTML5/CSS3/JavaScript SPA frontend
 from fastapi.staticfiles import StaticFiles

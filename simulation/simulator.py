@@ -45,7 +45,11 @@ class GPUSimulator:
         self.gpu_util_history: Dict[str, List[float]] = {g.gpu_id: [] for g in self.gpus}
         
         self.metrics_engine = MetricsEngine()
+        self.custom_weights: Optional[Dict[str, float]] = None
         self.save_gpu_state()
+
+    def set_custom_weights(self, weights: Dict[str, float]):
+        self.custom_weights = weights
 
     def set_scheduler_type(self, scheduler_type: str):
         self.scheduler_type = scheduler_type.lower()

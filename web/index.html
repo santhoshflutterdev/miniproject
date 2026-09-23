@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Predictive & Carbon-Aware GPU Scheduling Dashboard - Energy-Efficient Cloud Computing and Multi-Objective Resource Allocation">
+    <title>⚡ GPU Scheduler Dashboard | Predictive & Carbon-Aware</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-globes">
+        <div class="globe globe-1"></div>
+        <div class="globe globe-2"></div>
+        <div class="globe globe-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="brand-container">
+                <div class="brand-icon">⚡</div>
+                <div>
+                    <h1 class="brand-title">Predictive & Carbon-Aware GPU Scheduling</h1>
+                    <p class="brand-subtitle">Energy-Efficient Cloud Computing & Multi-Objective Resource Allocation (Firebase Connected)</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge" id="firebase-status">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Firebase Connected</span>
+                </div>
+                <button id="run-sim-btn" class="btn btn-primary">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">Run Live Simulation</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Metric Cards Grid -->
+        <section class="section-container" aria-label="Key Performance Indicators">
+            <div class="section-title-wrapper">
+                <h2>🎯 Proposed System Metrics</h2>
+                <span class="badge badge-success">Optimal Performance</span>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon icon-time">⏱️</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Average Waiting Time</span>
+                        <div class="metric-value-wrapper">
+                            <span class="metric-value" id="metric-waiting">--</span>
+                            <span class="metric-unit">min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-energy">⚡</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Total Energy Used</span>
+                        <div class="metric-value-wrapper">
+                            <span class="metric-value" id="metric-energy">--</span>
+                            <span class="metric-unit">kWh</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-carbon">🌱</div>
+                    <div class="metric-content">
+                        <span class="metric-label">Carbon Emissions</span>
+                        <div class="metric-value-wrapper">
+                            <span class="metric-value" id="metric-carbon">--</span>
+                            <span class="metric-unit">gCO₂</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon icon-balance">⚖️</div>
+                    <div class="metric-content">
+                        <span class="metric-label">GPU Load Imbalance</span>
+                        <div class="metric-value-wrapper">
+                            <span class="metric-value" id="metric-imbalance">--</span>
+                            <span class="metric-unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GPU Cluster & Grid Status -->
+        <section class="section-container" aria-label="GPU Cluster Status">
+            <div class="section-title-wrapper">
+                <h2>📊 GPU Cluster & Regional Grid Status</h2>
+                <span class="badge badge-info">4 Active Nodes</span>
+            </div>
+
+            <div class="gpu-grid" id="gpu-cluster-grid">
+                <!-- Dynamically populated GPU cards -->
+                <div class="gpu-card skeleton"></div>
+                <div class="gpu-card skeleton"></div>
+                <div class="gpu-card skeleton"></div>
+                <div class="gpu-card skeleton"></div>
+            </div>
+        </section>
+
+        <!-- Comparative Analytics & Visualizations -->
+        <section class="section-container" aria-label="Comparative Charts">
+            <div class="section-title-wrapper">
+                <h2>📈 Algorithm Performance Benchmarks</h2>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" data-chart="carbon">Carbon Emissions</button>
+                    <button class="tab-btn" data-chart="energy">Energy Used</button>
+                    <button class="tab-btn" data-chart="waiting">Waiting Time</button>
+                </div>
+            </div>
+
+            <div class="chart-container-card">
+                <canvas id="benchmarkChart" height="110"></canvas>
+            </div>
+        </section>
+
+        <!-- Detailed Benchmarks Data Table -->
+        <section class="section-container" aria-label="Full Benchmark Data Table">
+            <div class="section-title-wrapper">
+                <h2>📋 Firebase Comparative Benchmarks</h2>
+                <button class="btn btn-secondary btn-sm" id="refresh-data-btn">🔄 Refresh Data</button>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="data-table" id="benchmarks-table">
+                        <thead>
+                            <tr>
+                                <th>Scheduling Strategy</th>
+                                <th>Avg Waiting Time (min)</th>
+                                <th>Avg Turnaround Time (min)</th>
+                                <th>Total Energy (kWh)</th>
+                                <th>Total Carbon (gCO₂</th>
+                                <th>Load Imbalance (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Dynamically populated rows -->
+                            <tr>
+                                <td colspan="6" class="text-center py-4">Loading benchmark results...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>⚡ Predictive & Carbon-Aware GPU Resource Scheduler &copy; 2026 | Cloud Infrastructure Optimization</p>
+        </footer>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

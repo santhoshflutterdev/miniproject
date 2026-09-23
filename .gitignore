@@ -1,0 +1,25 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache & compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Dataset & model binaries (optional large files)
+data/processed/
+models/*.pt
+
+# OS / IDE files
+.DS_Store
+.vscode/
+.idea/
+
+# Environment secrets
+.env
+serviceAccountKey.json

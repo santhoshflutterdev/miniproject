@@ -3,175 +3,547 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Predictive & Carbon-Aware GPU Scheduling Dashboard - Energy-Efficient Cloud Computing and Multi-Objective Resource Allocation">
-    <title>⚡ GPU Scheduler Dashboard | Predictive & Carbon-Aware</title>
-    
+    <meta name="description" content="Predictive & Carbon-Aware GPU Scheduling Dashboard with Software-Enforced Resource Isolation in Cloud Environments">
+    <title>⚡ Cloud GPU Scheduler | Predictive, Carbon-Aware & Software Isolation</title>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js for data visualization -->
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Custom Styles -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="background-globes">
-        <div class="globe globe-1"></div>
-        <div class="globe globe-2"></div>
-        <div class="globe globe-3"></div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="app-container">
-        <!-- Top Navigation / Header -->
-        <header class="app-header">
-            <div class="brand-container">
-                <div class="brand-icon">⚡</div>
-                <div>
-                    <h1 class="brand-title">Predictive & Carbon-Aware GPU Scheduling</h1>
-                    <p class="brand-subtitle">Energy-Efficient Cloud Computing & Multi-Objective Resource Allocation (Firebase Connected)</p>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <div class="brand-logo">⚡</div>
+                <div class="brand-info">
+                    <h1 class="brand-title">GPU Scheduler</h1>
+                    <p class="brand-subtitle">Predictive & Carbon-Aware</p>
                 </div>
             </div>
-            <div class="header-actions">
-                <div class="status-badge" id="firebase-status">
-                    <span class="status-dot"></span>
-                    <span id="status-text">Firebase Connected</span>
-                </div>
-                <button id="run-sim-btn" class="btn btn-primary">
-                    <span class="btn-icon">▶</span>
-                    <span class="btn-text">Run Live Simulation</span>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="tab-overview">
+                    <span class="nav-icon">📊</span> Overview
                 </button>
-            </div>
-        </header>
+                <button class="nav-item" data-tab="tab-submit-task">
+                    <span class="nav-icon">📥</span> Submit Task
+                </button>
+                <button class="nav-item" data-tab="tab-gpu-cluster">
+                    <span class="nav-icon">🖥️</span> GPU Cluster
+                </button>
+                <button class="nav-item" data-tab="tab-task-queue">
+                    <span class="nav-icon">📋</span> Task Queue
+                </button>
+                <button class="nav-item" data-tab="tab-predictive">
+                    <span class="nav-icon">🔮</span> Predictive Scheduling
+                </button>
+                <button class="nav-item" data-tab="tab-carbon">
+                    <span class="nav-icon">🌱</span> Carbon Analytics
+                </button>
+                <button class="nav-item" data-tab="tab-isolation">
+                    <span class="nav-icon">🛡️</span> Software Isolation
+                </button>
+                <button class="nav-item" data-tab="tab-comparison">
+                    <span class="nav-icon">⚖️</span> Scheduler Comparison
+                </button>
+                <button class="nav-item" data-tab="tab-simulation">
+                    <span class="nav-icon">🎮</span> Simulation Engine
+                </button>
+                <button class="nav-item" data-tab="tab-settings">
+                    <span class="nav-icon">⚙️</span> Settings
+                </button>
+            </nav>
 
-        <!-- KPI Metric Cards Grid -->
-        <section class="section-container" aria-label="Key Performance Indicators">
-            <div class="section-title-wrapper">
-                <h2>🎯 Proposed System Metrics</h2>
-                <span class="badge badge-success">Optimal Performance</span>
+            <div class="sidebar-footer">
+                <div class="status-badge" id="api-status-badge">
+                    <span class="status-dot online"></span>
+                    <span id="api-status-text">Backend API Online</span>
+                </div>
             </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-icon icon-time">⏱️</div>
-                    <div class="metric-content">
-                        <span class="metric-label">Average Waiting Time</span>
-                        <div class="metric-value-wrapper">
-                            <span class="metric-value" id="metric-waiting">--</span>
-                            <span class="metric-unit">min</span>
+        </aside>
+
+        <!-- Main Content Viewport -->
+        <main class="main-content">
+
+            <!-- 1. OVERVIEW TAB -->
+            <section id="tab-overview" class="tab-pane active">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Predictive & Carbon-Aware GPU Scheduler</h2>
+                        <p class="page-subtitle">Cloud Workload Scheduling with Software-Enforced Resource Isolation</p>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Cards Grid -->
+                <div class="metrics-grid">
+                    <div class="kpi-card cyan-border">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Completed Tasks</span>
+                            <span class="kpi-icon">✅</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-completed-tasks">0 / 0</div>
+                        <div class="kpi-subtext">Queued: <span id="kpi-queued-count">0</span></div>
+                    </div>
+
+                    <div class="kpi-card purple-border">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Avg GPU Utilization</span>
+                            <span class="kpi-icon">🖥️</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-avg-util">0.0%</div>
+                        <div class="kpi-subtext">Across 4 Shared Nodes</div>
+                    </div>
+
+                    <div class="kpi-card green-border">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Total Carbon Emissions</span>
+                            <span class="kpi-icon">🌱</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-total-carbon">0.0 <span class="unit">gCO₂</span></div>
+                        <div class="kpi-subtext">Energy: <span id="kpi-total-energy">0.00</span> kWh</div>
+                    </div>
+
+                    <div class="kpi-card red-border">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Isolation Violations</span>
+                            <span class="kpi-icon">🛡️</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-violations">0</div>
+                        <div class="kpi-subtext">Software Ceiling Enforced</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🖥️ GPU Utilization & Capacity</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-gpu-utilization"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🌍 Regional Grid Carbon Intensity</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-carbon-intensity"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. SUBMIT TASK TAB -->
+            <section id="tab-submit-task" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Submit New GPU Task</h2>
+                        <p class="page-subtitle">Configure task requirements for intelligent scheduling</p>
+                    </div>
+                </div>
+
+                <div class="card form-card">
+                    <form id="task-submission-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="form-user-id">User ID</label>
+                                <input type="text" id="form-user-id" value="U101" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-gpu-demand">GPU Compute Demand (%): <span id="val-gpu-demand">40</span>%</label>
+                                <input type="range" id="form-gpu-demand" min="5" max="100" value="40" step="5">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-memory-demand">GPU Memory Demand (MB)</label>
+                                <select id="form-memory-demand">
+                                    <option value="2048">2048 MB (2 GB)</option>
+                                    <option value="4096">4096 MB (4 GB)</option>
+                                    <option value="8192" selected>8192 MB (8 GB)</option>
+                                    <option value="16384">16384 MB (16 GB)</option>
+                                    <option value="24576">24576 MB (24 GB)</option>
+                                    <option value="32768">32768 MB (32 GB)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-duration">Estimated Duration (Minutes)</label>
+                                <input type="number" id="form-duration" min="1" max="300" value="20" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-priority">Priority Level</label>
+                                <select id="form-priority">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-deadline">Deadline Relative Time (Minutes)</label>
+                                <input type="number" id="form-deadline" min="5" max="500" value="60" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-isolation">Software Isolation Level</label>
+                                <select id="form-isolation">
+                                    <option value="soft">Soft Isolation (Flexible Sharing)</option>
+                                    <option value="strong" selected>Strong Isolation (Strict Boundary)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="form-carbon-pref">Carbon Preference</label>
+                                <select id="form-carbon-pref">
+                                    <option value="low" selected>Low Carbon Grid</option>
+                                    <option value="standard">Standard Grid</option>
+                                    <option value="high">High Performance First</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">🚀 Submit & Schedule Task</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Result Card -->
+                <div id="submit-result-card" class="card result-card hidden">
+                    <div class="card-header">
+                        <h3>📍 Placement Scheduling Decision</h3>
+                    </div>
+                    <div class="result-details" id="submit-result-details"></div>
+                </div>
+            </section>
+
+            <!-- 3. GPU CLUSTER TAB -->
+            <section id="tab-gpu-cluster" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">GPU Cluster Node Monitors</h2>
+                        <p class="page-subtitle">Real-time status, power draw, and tenant workload breakdown</p>
+                    </div>
+                </div>
+
+                <div class="gpu-cluster-grid" id="gpu-nodes-container">
+                    <!-- Dynamic GPU cards -->
+                </div>
+            </section>
+
+            <!-- 4. TASK QUEUE TAB -->
+            <section id="tab-task-queue" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Cloud Task Queue & Execution Table</h2>
+                        <p class="page-subtitle">Interactive state management of queued, running, and completed tasks</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="custom-table" id="tasks-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>User ID</th>
+                                    <th>Status</th>
+                                    <th>GPU Compute</th>
+                                    <th>Memory</th>
+                                    <th>Duration</th>
+                                    <th>Assigned GPU</th>
+                                    <th>Isolation</th>
+                                    <th>Carbon (gCO₂)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-body">
+                                <tr><td colspan="9" class="text-center">Loading task queue...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. PREDICTIVE SCHEDULING TAB -->
+            <section id="tab-predictive" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">PyTorch LSTM Workload Forecasting</h2>
+                        <p class="page-subtitle">Deep learning prediction of upcoming cluster GPU demand spikes</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🧠 Model Training Controls</h3>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-epochs">Training Epochs</label>
+                            <input type="number" id="input-epochs" value="30" min="5" max="100">
+                        </div>
+                        <button class="btn btn-primary" id="btn-train-model">🧠 Train PyTorch LSTM Model</button>
+
+                        <hr class="divider">
+
+                        <div class="metrics-column">
+                            <div class="metric-row">
+                                <span>Model Status:</span>
+                                <strong id="pred-model-status">Trained 🟢</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Mean Absolute Error (MAE):</span>
+                                <strong id="pred-mae">0.0000</strong>
+                            </div>
+                            <div class="metric-row">
+                                <span>Root Mean Sq Error (RMSE):</span>
+                                <strong id="pred-rmse">0.0000</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📈 Actual vs Predicted GPU Workload</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-predictive-workload"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. CARBON ANALYTICS TAB -->
+            <section id="tab-carbon" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Carbon & Energy Footprint Tracker</h2>
+                        <p class="page-subtitle">Regional power consumption (kWh) and net carbon emissions ($gCO_2$)</p>
+                    </div>
+                </div>
+
+                <div class="metrics-grid mb-4">
+                    <div class="kpi-card green-border">
+                        <div class="kpi-title">Total Energy Consumed</div>
+                        <div class="kpi-value" id="carbon-energy-val">0.00 kWh</div>
+                    </div>
+                    <div class="kpi-card green-border">
+                        <div class="kpi-title">Total Carbon Footprint</div>
+                        <div class="kpi-value" id="carbon-total-val">0.00 gCO₂</div>
+                    </div>
+                    <div class="kpi-card green-border">
+                        <div class="kpi-title">Avg Carbon per Task</div>
+                        <div class="kpi-value" id="carbon-avg-val">0.00 gCO₂</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🌱 Carbon Emissions per Assigned GPU Node</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-carbon-per-gpu"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. SOFTWARE ISOLATION TAB -->
+            <section id="tab-isolation" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Software-Enforced Resource Isolation</h2>
+                        <p class="page-subtitle">Logical compute/memory boundaries and quota breach detection</p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Total Recorded Isolation Violations</span>
+                        <span class="badge badge-warning" id="badge-isolation-count">0 Events</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🛡️ Recorded Software Quota Breach Log</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table" id="isolation-table">
+                            <thead>
+                                <tr>
+                                    <th>Violation ID</th>
+                                    <th>Task ID</th>
+                                    <th>User ID</th>
+                                    <th>GPU Node</th>
+                                    <th>Type</th>
+                                    <th>Timestamp</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="isolation-table-body">
+                                <tr><td colspan="7" class="text-center">No isolation breach events recorded</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. SCHEDULER COMPARISON TAB -->
+            <section id="tab-comparison" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Comparative Experimental Analysis</h2>
+                        <p class="page-subtitle">Baseline (Least-Loaded) vs Predictive vs Proposed Multi-Objective Scheduler</p>
+                    </div>
+                </div>
+
+                <div class="action-banner mb-4">
+                    <button class="btn btn-primary btn-lg" id="btn-run-benchmark">⚡ Run Comparative Experiment Benchmark</button>
+                    <button class="btn btn-secondary btn-lg" id="btn-export-csv" disabled>📥 Export Benchmark CSV</button>
+                </div>
+
+                <div class="dashboard-grid-2 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⏱️ Average Waiting Time (Minutes)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-comp-waiting"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🌱 Total Carbon Emissions (gCO₂)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-comp-carbon"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <div class="metric-card">
-                    <div class="metric-icon icon-energy">⚡</div>
-                    <div class="metric-content">
-                        <span class="metric-label">Total Energy Used</span>
-                        <div class="metric-value-wrapper">
-                            <span class="metric-value" id="metric-energy">--</span>
-                            <span class="metric-unit">kWh</span>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 Comparative Results Summary Table</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table" id="comp-results-table">
+                            <thead>
+                                <tr>
+                                    <th>Scheduler Strategy</th>
+                                    <th>Completed Tasks</th>
+                                    <th>Avg Waiting (min)</th>
+                                    <th>Turnaround (min)</th>
+                                    <th>Total Energy (kWh)</th>
+                                    <th>Total Carbon (gCO₂)</th>
+                                    <th>Deadline Violations</th>
+                                    <th>Isolation Violations</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comp-table-body">
+                                <tr><td colspan="8" class="text-center">Click "Run Comparative Experiment Benchmark" to generate results</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. SIMULATION ENGINE TAB -->
+            <section id="tab-simulation" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Interactive Simulation Controls</h2>
+                        <p class="page-subtitle">Discrete-event GPU simulation clock and state controls</p>
+                    </div>
+                </div>
+
+                <div class="card controls-card mb-4">
+                    <div class="controls-grid">
+                        <button class="btn btn-success btn-lg" id="sim-btn-step">▶️ Step Next Minute</button>
+                        <button class="btn btn-primary btn-lg" id="sim-btn-run">⏩ Run All Tasks</button>
+                        <button class="btn btn-danger btn-lg" id="sim-btn-reset">🔄 Reset Simulation</button>
+                        
+                        <div class="form-group">
+                            <label for="sim-select-scheduler">Active Scheduler Strategy</label>
+                            <select id="sim-select-scheduler">
+                                <option value="proposed" selected>Proposed Multi-Objective</option>
+                                <option value="predictive">Predictive LSTM</option>
+                                <option value="baseline">Baseline Least-Loaded</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="metric-card">
-                    <div class="metric-icon icon-carbon">🌱</div>
-                    <div class="metric-content">
-                        <span class="metric-label">Carbon Emissions</span>
-                        <div class="metric-value-wrapper">
-                            <span class="metric-value" id="metric-carbon">--</span>
-                            <span class="metric-unit">gCO₂</span>
-                        </div>
+                <div class="card clock-card">
+                    <h3 class="clock-display">Current Simulation Clock: <span id="sim-clock-val">0</span> Minutes</h3>
+                    <div class="clock-stats">
+                        <span>Queued Tasks: <strong id="sim-queued-val">0</strong></span>
+                        <span>Running Tasks: <strong id="sim-running-val">0</strong></span>
+                        <span>Completed Tasks: <strong id="sim-completed-val">0</strong></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. SETTINGS TAB -->
+            <section id="tab-settings" class="tab-pane">
+                <div class="page-header">
+                    <div>
+                        <h2 class="page-title">Algorithm Weights & System Settings</h2>
+                        <p class="page-subtitle">Dynamic coefficient weights for the Proposed Multi-Objective Scoring Formula</p>
                     </div>
                 </div>
 
-                <div class="metric-card">
-                    <div class="metric-icon icon-balance">⚖️</div>
-                    <div class="metric-content">
-                        <span class="metric-label">GPU Load Imbalance</span>
-                        <div class="metric-value-wrapper">
-                            <span class="metric-value" id="metric-imbalance">--</span>
-                            <span class="metric-unit">%</span>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🎛️ Proposed Scheduler Weight Coefficients</h3>
+                    </div>
+
+                    <div class="sliders-container">
+                        <div class="slider-group">
+                            <label>Resource Availability Weight (w_res): <span id="lbl-w-res">0.30</span></label>
+                            <input type="range" id="slider-w-res" min="0" max="1" step="0.05" value="0.30">
                         </div>
+
+                        <div class="slider-group">
+                            <label>Prediction Forecast Weight (w_pred): <span id="lbl-w-pred">0.25</span></label>
+                            <input type="range" id="slider-w-pred" min="0" max="1" step="0.05" value="0.25">
+                        </div>
+
+                        <div class="slider-group">
+                            <label>Carbon Footprint Weight (w_carb): <span id="lbl-w-carb">0.25</span></label>
+                            <input type="range" id="slider-w-carb" min="0" max="1" step="0.05" value="0.25">
+                        </div>
+
+                        <div class="slider-group">
+                            <label>Deadline Urgency Weight (w_dead): <span id="lbl-w-dead">0.10</span></label>
+                            <input type="range" id="slider-w-dead" min="0" max="1" step="0.05" value="0.10">
+                        </div>
+
+                        <div class="slider-group">
+                            <label>Software Isolation Weight (w_iso): <span id="lbl-w-iso">0.10</span></label>
+                            <input type="range" id="slider-w-iso" min="0" max="1" step="0.05" value="0.10">
+                        </div>
+
+                        <button class="btn btn-primary btn-lg mt-4" id="btn-save-weights">💾 Save Algorithm Weights</button>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <!-- GPU Cluster & Grid Status -->
-        <section class="section-container" aria-label="GPU Cluster Status">
-            <div class="section-title-wrapper">
-                <h2>📊 GPU Cluster & Regional Grid Status</h2>
-                <span class="badge badge-info">4 Active Nodes</span>
-            </div>
-
-            <div class="gpu-grid" id="gpu-cluster-grid">
-                <!-- Dynamically populated GPU cards -->
-                <div class="gpu-card skeleton"></div>
-                <div class="gpu-card skeleton"></div>
-                <div class="gpu-card skeleton"></div>
-                <div class="gpu-card skeleton"></div>
-            </div>
-        </section>
-
-        <!-- Comparative Analytics & Visualizations -->
-        <section class="section-container" aria-label="Comparative Charts">
-            <div class="section-title-wrapper">
-                <h2>📈 Algorithm Performance Benchmarks</h2>
-                <div class="chart-tabs">
-                    <button class="tab-btn active" data-chart="carbon">Carbon Emissions</button>
-                    <button class="tab-btn" data-chart="energy">Energy Used</button>
-                    <button class="tab-btn" data-chart="waiting">Waiting Time</button>
-                </div>
-            </div>
-
-            <div class="chart-container-card">
-                <canvas id="benchmarkChart" height="110"></canvas>
-            </div>
-        </section>
-
-        <!-- Detailed Benchmarks Data Table -->
-        <section class="section-container" aria-label="Full Benchmark Data Table">
-            <div class="section-title-wrapper">
-                <h2>📋 Firebase Comparative Benchmarks</h2>
-                <button class="btn btn-secondary btn-sm" id="refresh-data-btn">🔄 Refresh Data</button>
-            </div>
-
-            <div class="table-card">
-                <div class="table-responsive">
-                    <table class="data-table" id="benchmarks-table">
-                        <thead>
-                            <tr>
-                                <th>Scheduling Strategy</th>
-                                <th>Avg Waiting Time (min)</th>
-                                <th>Avg Turnaround Time (min)</th>
-                                <th>Total Energy (kWh)</th>
-                                <th>Total Carbon (gCO₂</th>
-                                <th>Load Imbalance (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-body">
-                            <!-- Dynamically populated rows -->
-                            <tr>
-                                <td colspan="6" class="text-center py-4">Loading benchmark results...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer class="app-footer">
-            <p>⚡ Predictive & Carbon-Aware GPU Resource Scheduler &copy; 2026 | Cloud Infrastructure Optimization</p>
-        </footer>
+            </section>
+        </main>
     </div>
 
-    <!-- Notification Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
+    <!-- Notification Toast Element -->
+    <div id="toast" class="toast hidden"></div>
 
     <script src="app.js"></script>
 </body>

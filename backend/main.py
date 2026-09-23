@@ -169,3 +169,9 @@ def reset_simulation():
         df = pd.read_csv("data/sample_tasks.csv")
         simulator.load_tasks_from_dataframe(df)
     return {"status": "reset_complete"}
+
+# Mount HTML5/CSS3/JavaScript SPA frontend
+from fastapi.staticfiles import StaticFiles
+if os.path.exists("web"):
+    app.mount("/", StaticFiles(directory="web", html=True), name="web_frontend")
+

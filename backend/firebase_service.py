@@ -8,10 +8,13 @@ logger = logging.getLogger("FirebaseService")
 logger.setLevel(logging.INFO)
 
 _firebase_initialized = False
+_firebase_disabled = False
 _db_client = None
 
 def init_firebase():
-    global _firebase_initialized, _db_client
+    global _firebase_initialized, _firebase_disabled, _db_client
+    if _firebase_disabled:
+        return None
     if _firebase_initialized:
         return _db_client
 
@@ -23,10 +26,17 @@ def init_firebase():
 
         if not firebase_admin._apps:
             if os.path.exists(key_path):
+                with open(key_path, "r") as f:
+                    content = f.read()
+                    if "your-firebase-project-id" in content or "YOUR_PRIVATE_KEY" in content:
+                        logger.info("Placeholder serviceAccountKey.json detected. Using Local Database.")
+                        _firebase_disabled = True
+                        return None
+                
                 cred = credentials.Certificate(key_path)
                 firebase_admin.initialize_app(cred)
                 logger.info(f"Firebase Admin SDK initialized using {key_path}")
-            elif settings.FIREBASE_PROJECT_ID and settings.FIREBASE_PRIVATE_KEY:
+            elif settings.FIREBASE_PROJECT_ID and settings.FIREBASE_PRIVATE_KEY and "your-firebase-project-id" not in settings.FIREBASE_PROJECT_ID:
                 private_key = settings.FIREBASE_PRIVATE_KEY.replace('\\n', '\n')
                 cred_dict = {
                     "type": "service_account",
@@ -42,21 +52,37 @@ def init_firebase():
                 firebase_admin.initialize_app(cred)
                 logger.info("Firebase Admin SDK initialized using environment variables")
             else:
-                logger.warning("No valid Firebase credentials found. Falling back to Local Database.")
+                logger.info("No valid Firebase credentials found. Using Local Database.")
+                _firebase_disabled = True
                 return None
 
-        _db_client = firestore.client()
-        _firebase_initialized = True
-        return _db_client
+        client = firestore.client()
+        # Test connection to verify JWT validity
+        try:
+            client.collection("health_check").limit(1).get()
+            _db_client = client
+            _firebase_initialized = True
+            return _db_client
+        except Exception as auth_err:
+            logger.warning(f"Firebase Firestore authentication failed: {auth_err}. Falling back to Local Database.")
+            _firebase_disabled = True
+            _db_client = None
+            return None
+
     except Exception as e:
         logger.warning(f"Firebase initialization failed: {e}. Falling back to Local Database.")
-        _firebase_initialized = False
+        _firebase_disabled = True
         _db_client = None
         return None
 
 def is_firebase_active() -> bool:
     client = init_firebase()
     return client is not None
+
+def disable_firebase():
+    global _firebase_disabled, _db_client
+    _firebase_disabled = True
+    _db_client = None
 
 # Unified Storage Interface functions
 
@@ -67,7 +93,8 @@ def create_task(task_data: Dict[str, Any]) -> str:
         try:
             client.collection("tasks").document(task_id).set(task_data)
         except Exception as e:
-            logger.error(f"Firestore error creating task {task_id}: {e}")
+            logger.warning(f"Firestore error creating task {task_id}: {e}. Disabling Firebase.")
+            disable_firebase()
     local_db.set_document("tasks", task_id, task_data)
     return task_id
 
@@ -79,7 +106,8 @@ def get_task(task_id: str) -> Optional[Dict[str, Any]]:
             if doc.exists:
                 return doc.to_dict()
         except Exception as e:
-            logger.error(f"Firestore error reading task {task_id}: {e}")
+            logger.warning(f"Firestore error reading task {task_id}: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.get_document("tasks", task_id)
 
 def get_tasks() -> List[Dict[str, Any]]:
@@ -89,7 +117,8 @@ def get_tasks() -> List[Dict[str, Any]]:
             docs = client.collection("tasks").stream()
             return [doc.to_dict() for doc in docs]
         except Exception as e:
-            logger.error(f"Firestore error getting tasks: {e}")
+            logger.warning(f"Firestore error getting tasks: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.get_all_documents("tasks")
 
 def update_task(task_id: str, update_data: Dict[str, Any]) -> bool:
@@ -98,7 +127,8 @@ def update_task(task_id: str, update_data: Dict[str, Any]) -> bool:
         try:
             client.collection("tasks").document(task_id).update(update_data)
         except Exception as e:
-            logger.error(f"Firestore error updating task {task_id}: {e}")
+            logger.warning(f"Firestore error updating task {task_id}: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.update_document("tasks", task_id, update_data)
 
 def save_result(result_data: Dict[str, Any]) -> str:
@@ -108,7 +138,8 @@ def save_result(result_data: Dict[str, Any]) -> str:
         try:
             client.collection("scheduling_results").document(task_id).set(result_data)
         except Exception as e:
-            logger.error(f"Firestore error saving result: {e}")
+            logger.warning(f"Firestore error saving result: {e}. Disabling Firebase.")
+            disable_firebase()
     local_db.set_document("scheduling_results", task_id, result_data)
     return task_id
 
@@ -119,7 +150,8 @@ def get_results() -> List[Dict[str, Any]]:
             docs = client.collection("scheduling_results").stream()
             return [doc.to_dict() for doc in docs]
         except Exception as e:
-            logger.error(f"Firestore error getting results: {e}")
+            logger.warning(f"Firestore error getting results: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.get_all_documents("scheduling_results")
 
 def save_prediction(prediction_data: Dict[str, Any]) -> str:
@@ -129,7 +161,8 @@ def save_prediction(prediction_data: Dict[str, Any]) -> str:
         try:
             client.collection("predictions").document(doc_id).set(prediction_data)
         except Exception as e:
-            logger.error(f"Firestore error saving prediction: {e}")
+            logger.warning(f"Firestore error saving prediction: {e}. Disabling Firebase.")
+            disable_firebase()
     local_db.set_document("predictions", doc_id, prediction_data)
     return doc_id
 
@@ -140,7 +173,8 @@ def save_violation(violation_data: Dict[str, Any]) -> str:
         try:
             client.collection("isolation_violations").document(v_id).set(violation_data)
         except Exception as e:
-            logger.error(f"Firestore error saving violation: {e}")
+            logger.warning(f"Firestore error saving violation: {e}. Disabling Firebase.")
+            disable_firebase()
     local_db.set_document("isolation_violations", v_id, violation_data)
     return v_id
 
@@ -151,7 +185,8 @@ def get_violations() -> List[Dict[str, Any]]:
             docs = client.collection("isolation_violations").stream()
             return [doc.to_dict() for doc in docs]
         except Exception as e:
-            logger.error(f"Firestore error getting violations: {e}")
+            logger.warning(f"Firestore error getting violations: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.get_all_documents("isolation_violations")
 
 def save_gpus(gpu_list: List[Dict[str, Any]]):
@@ -162,7 +197,8 @@ def save_gpus(gpu_list: List[Dict[str, Any]]):
             try:
                 client.collection("gpu_nodes").document(gpu_id).set(gpu)
             except Exception as e:
-                logger.error(f"Firestore error saving GPU {gpu_id}: {e}")
+                logger.warning(f"Firestore error saving GPU {gpu_id}: {e}. Disabling Firebase.")
+                disable_firebase()
         local_db.set_document("gpu_nodes", gpu_id, gpu)
 
 def get_gpus() -> List[Dict[str, Any]]:
@@ -172,7 +208,8 @@ def get_gpus() -> List[Dict[str, Any]]:
             docs = client.collection("gpu_nodes").stream()
             return [doc.to_dict() for doc in docs]
         except Exception as e:
-            logger.error(f"Firestore error getting GPUs: {e}")
+            logger.warning(f"Firestore error getting GPUs: {e}. Disabling Firebase.")
+            disable_firebase()
     return local_db.get_all_documents("gpu_nodes")
 
 def reset_simulation_store():
@@ -185,5 +222,6 @@ def reset_simulation_store():
                 for d in docs:
                     d.reference.delete()
         except Exception as e:
-            logger.error(f"Firestore error clearing collections: {e}")
+            logger.warning(f"Firestore error clearing collections: {e}. Disabling Firebase.")
+            disable_firebase()
     local_db.clear_all()
